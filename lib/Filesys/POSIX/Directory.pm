@@ -1,0 +1,163 @@
+package Filesys::POSIX::Directory;
+
+use strict;
+use warnings;
+
+use Carp qw/confess/;
+
+=head1 NAME
+
+Filesys::POSIX::Directory
+
+=head1 DESCRIPTION
+
+Filesys::POSIX::Directory is a common interface used to implement classes that
+act like directories, and should be able to be accessed randomly or in an
+iterative fashion.
+
+Classes which wish to implement the interface documented herein should provide
+implementations for ALL methods listed in this document, in the manner in which
+they are described within this document.
+
+=head1 RANDOM ACCESS
+
+=over
+
+=item C<$directory-E<gt>get($name)>
+
+If the current directory contains an item named for C<$name>, return the
+corresponding inode.  Otherwise, an C<undef> is returned.
+
+=cut
+
+sub get {
+    confess('Not implemented');
+}
+
+=item C<$directory-E<gt>set($name, $inode)>
+
+Store a reference to C<$inode> in the current directory, named after the member
+label C<$name>.  If an item already exists for $name, then it will be replaced
+by C<$inode>.
+
+=cut
+
+sub set {
+    confess('Not implemented');
+}
+
+=item C<$directory-E<gt>exists($name)>
+
+Returns true if a member called $name exists in the current directory.  Returns
+false if no such member inode is listed.
+
+=cut
+
+sub exists {
+    confess('Not implemented');
+}
+
+=item C<$directory-E<gt>detach($name)>
+
+Drop any references to a member called C<$name> in the current directory.  No
+side effects outside of the directory object instance shall occur.
+
+=cut
+
+sub detach {
+    confess('Not implemented');
+}
+
+=item C<$directory-E<gt>delete($name)>
+
+Drop any references to a member called $name in the current directory.  Side
+effects to other system resources referenced by this directory member may
+potentially occur, depending on the specific directory implementation.
+
+=cut
+
+sub delete {
+    confess('Not implemented');
+}
+
+=back
+
+=head1 LIST ACCESS
+
+=over
+
+=item C<$directory-E<gt>list()>
+
+Return a list of all items in the current directory, including C<.> and C<..>.
+
+=cut
+
+sub list {
+    confess('Not implemented');
+}
+
+=item C<$directory-E<gt>count()>
+
+Return the number of all items in the current directory, including C<.> and
+C<..>.
+
+=cut
+
+sub count {
+    confess('Not implemented');
+}
+
+=back
+
+=head1 ITERATIVE ACCESS
+
+=over
+
+=item C<$directory-E<gt>open()>
+
+Prepare the current directory object for iterative reading access.
+
+=cut
+
+sub open {
+    confess('Not implemented');
+}
+
+=item C<$directory-E<gt>rewind()>
+
+Rewind the current directory object to the beginning of the directory list when
+being accessed iteratively.
+
+=cut
+
+sub rewind {
+    confess('Not implemented');
+}
+
+=item C<$directory-E<gt>read()>
+
+Read and return a single item from the directory, advancing the pointer to the
+next item to be read, if any.  A list containing both the name of the object,
+and the inode it references, are returned.
+
+=cut
+
+sub read {
+    confess('Not implemented');
+}
+
+=item C<$directory-E<gt>close()>
+
+Close the current directory for iterative access.
+
+=cut
+
+sub close {
+    confess('Not implemented');
+}
+
+=back
+
+=cut
+
+1;
