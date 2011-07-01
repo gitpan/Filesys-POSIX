@@ -19,7 +19,7 @@ our $AUTOLOAD;
 
 BEGIN {
     use Exporter ();
-    our $VERSION = '0.10.0';
+    our $VERSION = '0.9.2';
 }
 
 =head1 NAME
@@ -606,7 +606,7 @@ sub rename {
     my $parent    = $self->stat( $hier->dirname );
     my $directory = $parent->directory;
 
-    confess('Operation not permitted') if ref $inode eq 'Filesys::POSIX::Real::Inode';
+    confess('Operation not permitted') if ref($inode) eq 'Filesys::POSIX::Real::Inode';
     confess('Cross-device link') unless $inode->{'dev'} eq $parent->{'dev'};
 
     if ( my $existing = $directory->get($name) ) {
@@ -673,6 +673,67 @@ sub rmdir {
     $directory->delete($name);
 
     return $inode;
+}
+
+=item C<$fs-E<gt>mknod($path, $mode)>
+
+=item C<$fs-E<gt>mknod($path, $mode, $dev)>
+
+Create a new inode at the specified C<$path>, with the inode permissions and
+format specified in the C<$mode> argument.  If C<$mode> specifies a C<$S_IFCHR>
+or C<$S_IFBLK> value, then the device number specified in C<$dev> will be given
+to the new inode.
+
+Code contained within the C<Filesys::POSIX> distribution assumes that the device
+identifier shall contain the major and minor numbers in separate 16-bit fields,
+in the following manner:
+
+    my $major = ($dev & 0xff00) >> 15;
+    my $minor =  $dev & 0x00ff;
+
+Returns a reference to a C<Filesys::POSIX::Inode> object upon success.
+
+=cut
+
+sub mknod {
+    my ( $self, $path, $mode, $dev ) = @_;
+    my $hier      = Filesys::POSIX::Path->new($path);
+    my $name      = $hier->basename;
+    my $parent    = $self->lstat( $hier->dirname );
+    my $directory = $parent->directory;
+
+    my $format = $mode & $S_IFMT;
+    my $perms  = $mode & $S_IPERM;
+
+    confess('Invalid argument') unless $format;
+    confess('File exists') if $directory->exists($name);
+
+    my $inode = $parent->child( $name, $format | $perms );
+
+    if ( $format == $S_IFCHR || $format == $S_IFBLK ) {
+        $inode->{'dev'} = $dev;
+    }
+
+    return $inode;
+}
+
+=item C<$fs-E<gt>mkfifo($path, $mode)>
+
+Create a new FIFO device at the specified C<$path>, with the permissions listed
+in C<$mode>.  Internally, this function is a frontend to
+C<Filesys::POSIX-E<gt>mknod()>.
+
+Returns a reference to a C<Filesys::POSIX::Inode> object upon success.
+
+=cut
+
+sub mkfifo {
+    my ( $self, $path, $mode ) = @_;
+
+    my $format = $S_IFIFO;
+    my $perms  = $mode & $S_IPERM;
+
+    return $self->mknod( $path, $format | $perms );
 }
 
 =back

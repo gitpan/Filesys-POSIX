@@ -6,10 +6,10 @@ use warnings;
 use Filesys::POSIX::Bits;
 use Filesys::POSIX::IO::Handle ();
 
-use File::Temp qw/mkstemp/;
-use Carp qw/confess/;
+use File::Temp ('mkstemp');
+use Carp       ('confess');
 
-our @ISA = qw/Filesys::POSIX::IO::Handle/;
+our @ISA = ('Filesys::POSIX::IO::Handle');
 
 my $DEFAULT_MAX = 16384;
 my $DEFAULT_DIR = '/tmp';
@@ -31,9 +31,7 @@ sub new {
 sub DESTROY {
     my ($self) = @_;
 
-    if ( $self->{'fh'} ) {
-        close( $self->{'fh'} );
-    }
+    close $self->{'fh'} if $self->{'fh'};
 
     if ( $self->{'file'} && -f $self->{'file'} ) {
         unlink $self->{'file'};
@@ -59,15 +57,14 @@ sub open {
 
         $self->{'fh'} = $fh;
     }
-    else {
-        if ( $flags & $O_TRUNC ) {
-            $self->{'size'} = 0;
-            undef $self->{'buf'};
-            $self->{'buf'} = '';
-        }
-    }
 
-    $self->{'inode'}->{'size'} = 0 if $flags & $O_TRUNC;
+    if ( $flags & $O_TRUNC ) {
+        $self->{'size'} = 0;
+        $self->{'inode'}->{'size'} = 0;
+
+        undef $self->{'buf'};
+        $self->{'buf'} = '';
+    }
 
     return $self;
 }

@@ -7,7 +7,7 @@ use Carp qw/confess/;
 
 =head1 NAME
 
-Filesys::POSIX::Directory
+Filesys::POSIX::Directory - Base class for implementing directory structures
 
 =head1 DESCRIPTION
 
@@ -105,6 +105,18 @@ C<..>.
 
 sub count {
     confess('Not implemented');
+}
+
+=item C<$directory-E<gt>empty()>
+
+Returns true if the directory only contains the C<.> and C<..> entries.
+
+=cut
+
+sub empty {
+    my ($self) = @_;
+
+    return $self->count == 2;
 }
 
 =back
