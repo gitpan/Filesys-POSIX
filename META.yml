@@ -9,7 +9,9 @@ distribution_type:  module
 configure_requires:
     ExtUtils::MakeMaker:  0
 build_requires:
-    ExtUtils::MakeMaker:  0
+    Test::Exception:   0.26
+    Test::NoWarnings:  0.081
+    Test::Simple:      0.44
 requires:
     Carp:              0
     Test::Exception:   0.26
