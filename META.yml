@@ -3,8 +3,8 @@ name:               Filesys-POSIX
 version:            0.9.2
 abstract:           Provides POSIX filesystem semantics in pure Perl
 author:
-    - Erin Schoenhals (erin@cpanel.net)
-license:            unknown
+    - Erin Schoenhals <erin@cpanel.net>
+license:            perl
 distribution_type:  module
 configure_requires:
     ExtUtils::MakeMaker:  0
