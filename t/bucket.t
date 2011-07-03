@@ -6,6 +6,8 @@ use Filesys::POSIX::Mem::Inode  ();
 use Filesys::POSIX::Mem::Bucket ();
 use Filesys::POSIX::Bits;
 
+use File::Temp ();
+
 use Test::More ( 'tests' => 32 );
 use Test::Exception;
 use Test::NoWarnings;
@@ -151,14 +153,12 @@ use Test::NoWarnings;
 }
 
 {
-    my $uid = $<;
+    my $dir = File::Temp::tempdir( 'CLEANUP' => 1 );
 
-    if ( $uid == 0 ) {
-        $> = ( getpwnam 'nobody' )[2];
-    }
+    chmod( 0555, $dir );
 
     my $bucket = Filesys::POSIX::Mem::Bucket->new(
-        'dir' => '/',
+        'dir' => $dir,
         'max' => 0
     );
 
@@ -166,10 +166,6 @@ use Test::NoWarnings;
         $bucket->write( 'foo', 3 );
     }
     "Filesys::POSIX::Mem::Bucket->_flush_to_disk() dies on bad mkstemp()";
-
-    if ( $uid == 0 ) {
-        $> = $uid;
-    }
 }
 
 {

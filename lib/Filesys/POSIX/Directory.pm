@@ -11,8 +11,8 @@ Filesys::POSIX::Directory - Base class for implementing directory structures
 
 =head1 DESCRIPTION
 
-Filesys::POSIX::Directory is a common interface used to implement classes that
-act like directories, and should be able to be accessed randomly or in an
+C<Filesys::POSIX::Directory> is a common interface used to implement classes
+that act like directories, and should be able to be accessed randomly or in an
 iterative fashion.
 
 Classes which wish to implement the interface documented herein should provide
@@ -86,7 +86,7 @@ sub delete {
 
 =over
 
-=item C<$directory-E<gt>list()>
+=item C<$directory-E<gt>list>
 
 Return a list of all items in the current directory, including C<.> and C<..>.
 
@@ -96,7 +96,7 @@ sub list {
     confess('Not implemented');
 }
 
-=item C<$directory-E<gt>count()>
+=item C<$directory-E<gt>count>
 
 Return the number of all items in the current directory, including C<.> and
 C<..>.
@@ -107,7 +107,7 @@ sub count {
     confess('Not implemented');
 }
 
-=item C<$directory-E<gt>empty()>
+=item C<$directory-E<gt>empty>
 
 Returns true if the directory only contains the C<.> and C<..> entries.
 
@@ -125,7 +125,7 @@ sub empty {
 
 =over
 
-=item C<$directory-E<gt>open()>
+=item C<$directory-E<gt>open>
 
 Prepare the current directory object for iterative reading access.
 
@@ -135,7 +135,7 @@ sub open {
     confess('Not implemented');
 }
 
-=item C<$directory-E<gt>rewind()>
+=item C<$directory-E<gt>rewind>
 
 Rewind the current directory object to the beginning of the directory list when
 being accessed iteratively.
@@ -146,7 +146,7 @@ sub rewind {
     confess('Not implemented');
 }
 
-=item C<$directory-E<gt>read()>
+=item C<$directory-E<gt>read>
 
 Read and return a single item from the directory, advancing the pointer to the
 next item to be read, if any.  A list containing both the name of the object,
@@ -158,7 +158,7 @@ sub read {
     confess('Not implemented');
 }
 
-=item C<$directory-E<gt>close()>
+=item C<$directory-E<gt>close>
 
 Close the current directory for iterative access.
 

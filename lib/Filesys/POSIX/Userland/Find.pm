@@ -47,8 +47,8 @@ hierarchies.
 
 C<$fs-E<gt>find> will perform recursive descent into each path passed, printing
 the full pathname of each item found relative to each item found in the
-C<@paths> list.  For each item found, both a Filesys::POSIX::Path object, and an
-inode, respectively, are passed as the sole arguments to the callback.  With
+C<@paths> list.  For each item found, both a L<Filesys::POSIX::Path> object, and
+an inode, respectively, are passed as the sole arguments to the callback.  With
 this mechanism, it is possible to retrieve path data from each item in every way
 currently provided by L<File::Find>, without retaining global state to do so.
 As a reference to the corresponding item's inode object is passed, there is no

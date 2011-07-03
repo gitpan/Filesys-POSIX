@@ -40,7 +40,7 @@ and inode format.
 
 =item C<Filesys::POSIX::IO::Handle-E<gt>seek>
 
-Uses C<$SEEK_SET>, C<$SEEK_CUR>, and C<$SEEK_END> for the $whence argument.
+Uses C<$SEEK_SET>, C<$SEEK_CUR>, and C<$SEEK_END> for the C<$whence> argument.
 
 =back
 
