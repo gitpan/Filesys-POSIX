@@ -16,7 +16,7 @@ sub new {
 
     return bless {
         'path'     => $path,
-        'node'     => $inode,
+        'inode'    => $inode,
         'mtime'    => 0,
         'overlays' => {},
         'skipped'  => {},
@@ -54,17 +54,17 @@ sub _sync_member {
         return;
     }
 
-    confess $! unless @st;
+    confess($!) unless @st;
 
     if ( exists $self->{'members'}->{$name} ) {
         $self->{'members'}->{$name}->update(@st);
     }
     else {
-        $self->{'members'}->{$name} = Filesys::POSIX::Real::Inode->new(
+        $self->{'members'}->{$name} = Filesys::POSIX::Real::Inode->from_disk(
             $subpath,
             'st_info' => \@st,
-            'dev'     => $self->{'node'}->{'dev'},
-            'parent'  => $self->{'node'}
+            'dev'     => $self->{'inode'}->{'dev'},
+            'parent'  => $self->{'inode'}
         );
     }
 }
@@ -115,7 +115,7 @@ sub delete {
     }
 
     my $now = time;
-    @{ $self->{'node'} }{qw/mtime ctime/} = ( $now, $now );
+    @{ $self->{'inode'} }{qw/mtime ctime/} = ( $now, $now );
 
     my $inode = $self->{'members'}->{$name};
     delete $self->{'members'}->{$name};

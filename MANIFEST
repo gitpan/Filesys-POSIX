@@ -19,6 +19,7 @@ lib/Filesys/POSIX/Real/Inode.pm
 lib/Filesys/POSIX/Userland.pm
 lib/Filesys/POSIX/Userland/Find.pm
 lib/Filesys/POSIX/Userland/Tar.pm
+lib/Filesys/POSIX/Userland/Test.pm
 lib/Filesys/POSIX/VFS.pm
 lib/Filesys/POSIX/VFS/Inode.pm
 LICENSE
@@ -43,6 +44,7 @@ t/path.t
 t/real.t
 t/stat.t
 t/tar.t
+t/test.t
 t/umask.t
 t/userland.t
 t/vfs.t

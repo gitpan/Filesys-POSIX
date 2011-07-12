@@ -81,7 +81,12 @@ sub attach {
 Manifests a L<Filesys::POSIX::Real::Inode> object corresponding to the actual
 inode from the underlying filesystem whose path is specified by C<$real_src>,
 and attaches it to the virtual filesystem in the location specified by C<$dest>.
-Exceptions will be thrown for the following:
+
+Any inodes mapped from the real filesystem into a virtual filesystem have the
+C<sticky> update flag set, meaning, only certain operations made on the in-memory
+inode affect the real inode.  See L<Filesys::POSIX::Real> for further details.
+
+Exceptions will be thrown in the following conditions:
 
 =over
 
@@ -108,15 +113,14 @@ sub map {
 
     confess('File exists') if $directory->exists($name);
 
-    my $inode = Filesys::POSIX::Real::Inode->new(
+    my $inode = Filesys::POSIX::Real::Inode->from_disk(
         $real_src,
         'dev'    => $parent->{'dev'},
+        'sticky' => 1,
         'parent' => $parent
     );
 
-    $directory->set( $name, $inode );
-
-    return $inode;
+    return $directory->set( $name, $inode );
 }
 
 =item C<$fs-E<gt>alias($src, $dest)>
@@ -147,9 +151,7 @@ sub alias {
 
     confess('File exists') if $directory->exists($name);
 
-    $directory->set( $name, $inode );
-
-    return $inode;
+    return $directory->set( $name, $inode );
 }
 
 =item C<$fs-E<gt>detach($path)>
@@ -199,7 +201,7 @@ sub detach {
 
 =item C<$fs-E<gt>replace($path, $inode)>
 
-Replaces an existant inode specified by C<$path> with the inode object passed in
+Replaces an existent inode specified by C<$path> with the inode object passed in
 the C<$inode> argument.  The existing and specified inodes can be of any type.
 
 Exceptions will be thrown for the following:
@@ -227,9 +229,8 @@ sub replace {
     confess('No such file or directory') unless $directory->exists($name);
 
     $directory->detach($name);
-    $directory->set( $name, $inode );
 
-    return $inode;
+    return $directory->set( $name, $inode );
 }
 
 =back

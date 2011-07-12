@@ -168,18 +168,22 @@ sub closedir {
 
 =item C<$fs-E<gt>touch($path)>
 
-Acts like the userland utility L<touch(1)>.  Uses C<$fs-E<gt>open> with the
-C<$O_CREAT> flag to open the file specified by C<$path>, and immediately closes
-the file descriptor returned.  This causes an update of the inode modification
-time for existing files, and the creation of new, empty files otherwise.
+Acts like the userland utility L<touch()|perlfunc/touch>.  Uses C<$fs-E<gt>open>
+with the C<$O_CREAT> flag to open the file specified by C<$path>, and
+immediately closes the file descriptor returned.  This causes an update of the
+inode modification time for existing files, and the creation of new, empty files
+otherwise.
 
 =cut
 
 sub touch {
     my ( $self, $path ) = @_;
     my $fd = $self->open( $path, $O_CREAT );
+    my $inode = $self->fstat($fd);
 
     $self->close($fd);
+
+    return $inode;
 }
 
 =back
