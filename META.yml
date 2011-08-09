@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Filesys-POSIX
-version:            0.9.2
+version:            0.9.2_2011080901
 abstract:           Provides POSIX filesystem semantics in pure Perl
 author:
     - Erin Schoenhals <erin@cpanel.net>
@@ -9,7 +9,9 @@ distribution_type:  module
 configure_requires:
     ExtUtils::MakeMaker:  0
 build_requires:
-    ExtUtils::MakeMaker:  0
+    Test::Exception:   0.26
+    Test::NoWarnings:  0.081
+    Test::Simple:      0.44
 requires:
     Carp:              0
     Test::Exception:   0.26
