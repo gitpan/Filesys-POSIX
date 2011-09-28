@@ -25,6 +25,8 @@ lib/Filesys/POSIX/VFS/Inode.pm
 LICENSE
 Makefile.PL
 MANIFEST			This list of files
+MYMETA.json
+MYMETA.yml
 README
 t/001_load.t
 t/bucket.t
@@ -48,4 +50,5 @@ t/test.t
 t/umask.t
 t/userland.t
 t/vfs.t
-META.yml                                 Module meta-data (added by MakeMaker)
+META.yml                                 Module YAML meta-data (added by MakeMaker)
+META.json                                Module JSON meta-data (added by MakeMaker)
