@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Filesys-POSIX
-version:            0.9.3_2011101201
+version:            0.9.3_2011110901
 abstract:           Provides POSIX filesystem semantics in pure Perl
 author:
     - Erin Schoenhals <erin@cpanel.net>
@@ -14,6 +14,7 @@ build_requires:
     Test::Simple:      0.44
 requires:
     Carp:              0
+    Digest::SHA1:      0
     Test::Exception:   0.26
     Test::NoWarnings:  0.081
     Test::Simple:      0.44

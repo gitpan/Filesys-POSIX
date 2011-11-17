@@ -6,13 +6,27 @@ use warnings;
 use Filesys::POSIX::Bits;
 use Filesys::POSIX::IO::Handle ();
 
-use File::Temp ('mkstemp');
-use Carp       ('confess');
+use Fcntl;
+use File::Temp ();
+use Carp       ();
 
 our @ISA = ('Filesys::POSIX::IO::Handle');
 
 my $DEFAULT_MAX = 16384;
 my $DEFAULT_DIR = '/tmp';
+
+#
+# Provide a table for converting between open() modes as recognized by both
+# Filesys::POSIX::Bits, and Fcntl.
+#
+my %OPEN_MODES = (
+    $O_CREAT  => O_CREAT,
+    $O_RDONLY => O_RDONLY,
+    $O_RDWR   => O_RDWR,
+    $O_WRONLY => O_WRONLY,
+    $O_APPEND => O_APPEND,
+    $O_TRUNC  => O_TRUNC
+);
 
 sub new {
     my ( $class, %opts ) = @_;
@@ -38,32 +52,50 @@ sub DESTROY {
     }
 }
 
+#
+# Since the open() flags in Filesys::POSIX::Bits differ in bit value from their
+# equivalents in Fcntl, it is necessary to have a means of translating from the
+# former to the latter; this method provides such facilities.
+#
+sub _bits_to_fcntl {
+    my ($flags) = @_;
+    my $ret = 0;
+
+    foreach my $key ( keys %OPEN_MODES ) {
+        my $bits_value  = $key;
+        my $fcntl_value = $OPEN_MODES{$key};
+
+        $ret |= $fcntl_value if $flags & $bits_value;
+    }
+
+    return $ret;
+}
+
 sub open {
     my ( $self, $flags ) = @_;
     $flags ||= 0;
 
-    confess('Already opened') if $self->{'fh'};
+    Carp::confess('Already opened') if $self->{'fh'};
+
+    $self->{'pos'} = 0;
 
     if ( $flags & $O_APPEND ) {
         $self->{'pos'} = $self->{'size'};
     }
-    elsif ( $flags & $O_TRUNC ) {
-        $self->{'pos'}  = 0;
-        $self->{'size'} = 0;
-    }
-
-    if ( $self->{'file'} ) {
-        sysopen( my $fh, $self->{'file'}, $flags ) or confess("Unable to reopen bucket $self->{'file'}: $!");
-
-        $self->{'fh'} = $fh;
-    }
-
-    if ( $flags & $O_TRUNC ) {
+    elsif ( $flags & ( $O_CREAT | $O_TRUNC ) ) {
         $self->{'size'} = 0;
         $self->{'inode'}->{'size'} = 0;
 
         undef $self->{'buf'};
         $self->{'buf'} = '';
+    }
+
+    if ( $self->{'file'} ) {
+        my $fcntl_flags = _bits_to_fcntl($flags);
+
+        sysopen( my $fh, $self->{'file'}, $fcntl_flags ) or Carp::confess("Unable to reopen bucket $self->{'file'}: $!");
+
+        $self->{'fh'} = $fh;
     }
 
     return $self;
@@ -72,11 +104,11 @@ sub open {
 sub _flush_to_disk {
     my ( $self, $len ) = @_;
 
-    confess('Already flushed to disk') if $self->{'file'};
+    Carp::confess('Already flushed to disk') if $self->{'file'};
 
-    my ( $fh, $file ) = eval { mkstemp("$self->{'dir'}/.bucket-XXXXXX") };
+    my ( $fh, $file ) = eval { File::Temp::mkstemp("$self->{'dir'}/.bucket-XXXXXX") };
 
-    confess("mkstemp() failure: $@") if $@;
+    Carp::confess("mkstemp() failure: $@") if $@;
 
     my $offset = 0;
 
@@ -95,12 +127,17 @@ sub write {
     my ( $self, $buf, $len ) = @_;
     my $ret = 0;
 
-    unless ( $self->{'fh'} ) {
-        $self->_flush_to_disk($len) if $self->{'pos'} + $len > $self->{'max'};
+    #
+    # If the current file position, plus the length of the intended write
+    # is to exceed the maximum memory bucket threshold, then dump the file
+    # to disk if it hasn't already happened.
+    #
+    if ( $self->{'pos'} + $len > $self->{'max'} ) {
+        $self->_flush_to_disk($len) unless $self->{'fh'};
     }
 
     if ( $self->{'fh'} ) {
-        confess("Unable to write to disk bucket") unless fileno( $self->{'fh'} );
+        Carp::confess("Unable to write to disk bucket") unless fileno( $self->{'fh'} );
         $ret = syswrite( $self->{'fh'}, $buf );
     }
     else {
@@ -130,7 +167,7 @@ sub read {
     my $ret  = 0;
 
     if ( $self->{'fh'} ) {
-        confess("Unable to read bucket: $!") unless fileno( $self->{'fh'} );
+        Carp::confess("Unable to read bucket: $!") unless fileno( $self->{'fh'} );
         $ret = sysread( $self->{'fh'}, $_[0], $len );
     }
     else {
@@ -169,14 +206,20 @@ sub seek {
         $newpos = $self->{'size'} + $pos;
     }
     else {
-        confess('Invalid argument');
+        Carp::confess('Invalid argument');
     }
 
     return $self->{'pos'} = $newpos;
 }
 
 sub tell {
-    return shift->{'pos'};
+    my ($self) = @_;
+
+    if ( $self->{'fh'} ) {
+        return sysseek $self->{'fh'}, 0, 1;
+    }
+
+    return $self->{'pos'};
 }
 
 sub close {
