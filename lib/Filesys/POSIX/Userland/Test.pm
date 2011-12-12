@@ -1,3 +1,9 @@
+# Filesys::POSIX           Copyright (c) 2011 cPanel, Inc.  All rights reserved.
+# copyright@cpanel.net                                        http://cpanel.net/
+# 
+# Written by Erin Schönhals <erin@cpanel.net>.  Released under the terms of the
+# Perl Artistic License.
+
 package Filesys::POSIX::Userland::Test;
 
 use strict;
@@ -14,7 +20,7 @@ sub EXPORT {
 
 =head1 NAME
 
-Filesys::POSIX::Userland::Tests - Inode conditional tests
+Filesys::POSIX::Userland::Test - Inode conditional tests
 
 =head1 SYNOPSIS
 

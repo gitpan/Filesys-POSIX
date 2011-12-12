@@ -1,3 +1,9 @@
+# Filesys::POSIX           Copyright (c) 2011 cPanel, Inc.  All rights reserved.
+# copyright@cpanel.net                                        http://cpanel.net/
+# 
+# Written by Erin Schönhals <erin@cpanel.net>.  Released under the terms of the
+# Perl Artistic License.
+
 package Filesys::POSIX;
 
 use strict;
@@ -19,7 +25,7 @@ our $AUTOLOAD;
 
 BEGIN {
     use Exporter ();
-    our $VERSION = '0.9.3_2011113001';
+    our $VERSION = '0.9.4_2011121201';
 }
 
 =head1 NAME
@@ -759,6 +765,23 @@ novel ways that take advantage of the unique characteristics and features of
 Filesys::POSIX.  For example, one method is provided that allows a developer to
 map a file or directory from the system's underlying, actual filesystem, into
 any arbitrary point in the virtual filesystem.
+
+=item L<Filesys::POSIX::Userland::Find>
+
+Provides the ability to perform breadth-first operations on file hierarchies
+within an instance of a C<Filesys::POSIX> filesystem, in a subset of the
+functionality provided in L<File::Find>.
+
+=item L<Filesys::POSIX::Userland::Tar>
+
+Provides an implementation of the POSIX ustar and certain aspects of the GNU tar
+standard.  Currently allows for the creation of tar archives based on
+hierarchies within a C<Filesys::POSIX> instance.
+
+=item L<Filesys::POSIX::Userland::Test>
+
+Provides a series of truth tests that can be performed on files and directories
+specified by paths.
 
 =back
 

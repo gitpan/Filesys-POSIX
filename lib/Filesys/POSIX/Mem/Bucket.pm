@@ -1,3 +1,9 @@
+# Filesys::POSIX           Copyright (c) 2011 cPanel, Inc.  All rights reserved.
+# copyright@cpanel.net                                        http://cpanel.net/
+# 
+# Written by Erin Schönhals <erin@cpanel.net>.  Released under the terms of the
+# Perl Artistic License.
+
 package Filesys::POSIX::Mem::Bucket;
 
 use strict;
@@ -9,6 +15,21 @@ use Filesys::POSIX::IO::Handle ();
 use Fcntl;
 use File::Temp ();
 use Carp       ();
+
+=head1 NAME
+
+Filesys::POSIX::Mem::Bucket - Regular file I/O handle
+
+=head1 DESCRIPTION
+
+C<Filesys::POSIX::Mem::Bucket> provides an implementation of the interface in
+L<Filesys::POSIX::IO::Handle> that allows access to the regular file data of a
+file in a L<Filesys::POSIX::Mem> filesystem hierarchy.
+
+Internally, the bucket can store up to a specified maximum number of bytes until
+said data is flushed to a temporary file on disk, backed by L<File::Temp>.
+
+=cut
 
 our @ISA = ('Filesys::POSIX::IO::Handle');
 
@@ -232,5 +253,15 @@ sub close {
 
     $self->{'pos'} = 0;
 }
+
+=head1 SEE ALSO
+
+=over
+
+=item L<Filesys::POSIX::IO::Handle>
+
+=back
+
+=cut
 
 1;

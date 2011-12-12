@@ -1,3 +1,9 @@
+# Filesys::POSIX           Copyright (c) 2011 cPanel, Inc.  All rights reserved.
+# copyright@cpanel.net                                        http://cpanel.net/
+# 
+# Written by Erin Schönhals <erin@cpanel.net>.  Released under the terms of the
+# Perl Artistic License.
+
 package Filesys::POSIX::IO::Handle;
 
 use strict;
@@ -122,6 +128,17 @@ sub close {
 
     close $$self;
 }
+
+=back
+
+=head1 SEE ALSO
+
+=over
+
+=item L<Filesys::POSIX::Mem::Bucket>
+
+Provides an implementation of the interface described herein, but for access to
+regular file data for L<Filesys::POSIX::Mem> filesystem hierarchies.
 
 =back
 

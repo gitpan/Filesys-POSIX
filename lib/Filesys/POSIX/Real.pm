@@ -1,3 +1,9 @@
+# Filesys::POSIX           Copyright (c) 2011 cPanel, Inc.  All rights reserved.
+# copyright@cpanel.net                                        http://cpanel.net/
+# 
+# Written by Erin Schönhals <erin@cpanel.net>.  Released under the terms of the
+# Perl Artistic License.
+
 package Filesys::POSIX::Real;
 
 use strict;
@@ -30,9 +36,6 @@ This module implements the filesystem device type which provides a portal to
 the actual system's underlying filesystem.
 
 =head1 MOUNT OPTIONS
-
-The following mount options as passed by C<Filesys::POSIX-E<gt>new> or
-C<$fs-E<gt>mount> are honored.
 
 The following value is mandatory:
 
