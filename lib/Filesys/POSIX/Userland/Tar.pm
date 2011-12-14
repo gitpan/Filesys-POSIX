@@ -109,7 +109,7 @@ specified, the data is passed unmodified to L<Filesys::POSIX::Userland::Find>.
 In this way, for instance, the behavior of following symlinks can be specified.
 
 In addition to options supported by L<Filesys::POSIX::Userland::Find>, the
-following options are recognized uniquely by C<$FS-E<gt>tar()>:
+following options are recognized uniquely by C<$fs-E<gt>tar()>:
 
 =over
 
