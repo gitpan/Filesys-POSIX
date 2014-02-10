@@ -21,4 +21,4 @@ no_index:
     - inc
 requires:
   Carp: 0
-version: v0.9.9
+version: v0.9.10
