@@ -1,4 +1,4 @@
-# Copyright (c) 2012, cPanel, Inc.
+# Copyright (c) 2014, cPanel, Inc.
 # All rights reserved.
 # http://cpanel.net/
 #
@@ -63,22 +63,77 @@ sub EXPORT {
 }
 
 our $BLOCK_SIZE = 512;
+our $BUF_MAX    = 4096;
 
 #
 # NOTE: I'm only using $inode->open() calls to avoid having to call stat().
 # This is not necessarily something that should be done by end user software.
 #
 sub _write_file {
-    my ( $fh, $inode, $handle ) = @_;
+    my ( $fh, $inode, $handle, $size ) = @_;
 
-    while ( my $len = $fh->read( my $buf, 4096 ) ) {
+    my $actual_file_len = 0;
+
+    my $premature_eof;
+    do {
+        my $max_read = $size - $actual_file_len;
+        $max_read = $BUF_MAX if $max_read > $BUF_MAX;
+
+        my ( $len, $real_len, $buf );
+        if ($premature_eof) {    # If we reach EOF before the expected length, pad with null bytes
+            $len = $real_len = $max_read;
+            $buf = "\x0" x $max_read;
+        }
+        else {
+            $buf      = '';
+            $real_len = 0;
+            my $amt_read;
+
+            # Attempt to read a total of $max_read bytes per buffer. ($max_read is either the
+            # maximum buffer size or the number of bytes expected remaining in the file, whichever
+            # is smaller.)
+            #
+            # Possible outcomes:
+            #
+            #   1. We received no bytes, in which case we have reached EOF unexpectedly.
+            #      Produce a warning and set the flag to pad the remaining portion of the
+            #      file with null bytes.
+            #   2. We received exactly $max_read bytes. This is good and means we can drop out of
+            #      this sub-loop after a single iteration per read loop iteration. (Should be the
+            #      most common case.)
+            #   3. We received some bytes, but not as many as we expected. Retry the read,
+            #      accumulating bytes until we either have a total of $max_read bytes for
+            #      this block or we reach EOF.
+            do {
+                my $incremental_buf;
+                $amt_read = $fh->read( $incremental_buf, $max_read - $real_len );
+                $buf .= $incremental_buf;
+                $real_len += $amt_read;
+
+                if ( $amt_read <= 0 && $max_read - $real_len > 0 ) {
+                    $premature_eof = 1;
+                    warn sprintf(
+                        'WARNING: Short read while archiving file (expected total of %d bytes, but only got %d); padding with null bytes...',
+                        $size,
+                        $actual_file_len + $real_len,
+                    );
+                }
+            } while ( $real_len < $max_read && $amt_read > 0 );
+
+            $len = $real_len;
+        }
+
         if ( ( my $padlen = $BLOCK_SIZE - ( $len % $BLOCK_SIZE ) ) != $BLOCK_SIZE ) {
             $len += $padlen;
             $buf .= "\x0" x $padlen;
         }
 
-        $handle->write( $buf, $len ) == $len or Carp::confess('Short write while dumping file buffer to handle');
-    }
+        if ( ( my $written = $handle->write( $buf, $len ) ) != $len ) {
+            Carp::confess("Short write while dumping file buffer to handle. Expected to write $len bytes, but only wrote $written.");
+        }
+
+        $actual_file_len += $real_len;
+    } while ( $actual_file_len < $size );
 
     $fh->close;
 }
@@ -106,7 +161,7 @@ sub _archive {
         unless ( $handle->write( $blocks, $len ) == $len ) {
             Carp::confess('Short write while dumping tar header to file handle');
         }
-        _write_file( $fh, $inode, $handle ) if $inode->file;
+        _write_file( $fh, $inode, $handle, $header->{'size'} ) if $inode->file;
     };
     if ($@) {
         if ( !$opts->{'ignore_missing'} || $@ !~ /No such file or directory/ ) {
