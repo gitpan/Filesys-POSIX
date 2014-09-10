@@ -1,4 +1,4 @@
-# Copyright (c) 2012, cPanel, Inc.
+# Copyright (c) 2014, cPanel, Inc.
 # All rights reserved.
 # http://cpanel.net/
 #
@@ -8,10 +8,11 @@
 use strict;
 use warnings;
 
-use Filesys::POSIX            ();
-use Filesys::POSIX::Mem       ();
-use Filesys::POSIX::Real      ();
-use Filesys::POSIX::Directory ();
+use Filesys::POSIX             ();
+use Filesys::POSIX::Mem        ();
+use Filesys::POSIX::Real       ();
+use Filesys::POSIX::Extensions ();
+use Filesys::POSIX::Directory  ();
 use Filesys::POSIX::Bits;
 
 use File::Temp qw/mkdtemp/;
@@ -45,7 +46,6 @@ my %files = (
 );
 
 my $fs = Filesys::POSIX->new( Filesys::POSIX::Mem->new );
-$fs->import_module('Filesys::POSIX::Extensions');
 
 foreach my $mountpoint ( sort keys %mounts ) {
     my $mount = $mounts{$mountpoint};
@@ -97,7 +97,10 @@ foreach my $mountpoint ( sort keys %mounts ) {
 
         $fs->closedir($directory);
 
-        ok( $found == keys %members, "$type\->readdir() returned each member in list context" );
+        ok(
+            $found == keys %members,
+            "$type\->readdir() returned each member in list context"
+        );
     }
 
     {

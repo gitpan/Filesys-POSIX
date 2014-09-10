@@ -1,4 +1,4 @@
-# Copyright (c) 2012, cPanel, Inc.
+# Copyright (c) 2014, cPanel, Inc.
 # All rights reserved.
 # http://cpanel.net/
 #
@@ -13,10 +13,11 @@ use warnings;
 use Filesys::POSIX::Bits;
 use Filesys::POSIX::Bits::System;
 use Filesys::POSIX::IO::Handle ();
+use Filesys::POSIX::Error qw(throw);
 
 use Fcntl;
-use File::Temp ();
 use Carp       ();
+use File::Temp ();
 
 =head1 NAME
 
@@ -66,7 +67,7 @@ sub open {
     my ( $self, $flags ) = @_;
     $flags ||= 0;
 
-    Carp::confess('Already opened') if $self->{'fh'};
+    throw &Errno::EBUSY if $self->{'fh'};
 
     $self->{'pos'} = 0;
 
@@ -84,7 +85,7 @@ sub open {
     if ( $self->{'file'} ) {
         my $fcntl_flags = Filesys::POSIX::Bits::System::convertFlagsToSystem($flags);
 
-        sysopen( my $fh, $self->{'file'}, $fcntl_flags ) or Carp::confess("Unable to reopen bucket $self->{'file'}: $!");
+        sysopen( my $fh, $self->{'file'}, $fcntl_flags ) or Carp::confess("$!");
 
         $self->{'fh'} = $fh;
     }
@@ -95,9 +96,10 @@ sub open {
 sub _flush_to_disk {
     my ( $self, $len ) = @_;
 
-    Carp::confess('Already flushed to disk') if $self->{'file'};
+    throw &Errno::EALREADY if $self->{'file'};
 
-    my ( $fh, $file ) = eval { File::Temp::mkstemp("$self->{'dir'}/.bucket-XXXXXX") };
+    my ( $fh, $file ) =
+      eval { File::Temp::mkstemp("$self->{'dir'}/.bucket-XXXXXX") };
 
     Carp::confess("mkstemp() failure: $@") if $@;
 
@@ -128,7 +130,8 @@ sub write {
     }
 
     if ( $self->{'fh'} ) {
-        Carp::confess("Unable to write to disk bucket") unless fileno( $self->{'fh'} );
+        Carp::confess("Unable to write to disk bucket")
+          unless fileno( $self->{'fh'} );
         $ret = syswrite( $self->{'fh'}, $buf );
     }
     else {
@@ -136,7 +139,8 @@ sub write {
             $self->{'buf'} .= "\x00" x $gap;
         }
 
-        substr( $self->{'buf'}, $self->{'pos'}, $len ) = substr( $buf, 0, $len );
+        substr( $self->{'buf'}, $self->{'pos'}, $len ) =
+          substr( $buf, 0, $len );
         $ret = $len;
     }
 
@@ -158,11 +162,13 @@ sub read {
     my $ret  = 0;
 
     if ( $self->{'fh'} ) {
-        Carp::confess("Unable to read bucket: $!") unless fileno( $self->{'fh'} );
+        Carp::confess("Unable to read bucket: $!")
+          unless fileno( $self->{'fh'} );
         $ret = sysread( $self->{'fh'}, $_[0], $len );
     }
     else {
-        my $pos = $self->{'pos'} > $self->{'size'} ? $self->{'size'} : $self->{'pos'};
+        my $pos =
+          $self->{'pos'} > $self->{'size'} ? $self->{'size'} : $self->{'pos'};
         my $maxlen = $self->{'size'} - $pos;
         $len = $maxlen if $len > $maxlen;
 
@@ -197,7 +203,7 @@ sub seek {
         $newpos = $self->{'size'} + $pos;
     }
     else {
-        Carp::confess('Invalid argument');
+        throw &Errno::EINVAL;
     }
 
     return $self->{'pos'} = $newpos;
@@ -235,3 +241,24 @@ sub close {
 =cut
 
 1;
+
+__END__
+
+=head1 AUTHOR
+
+Written by Xan Tronix <xan@cpan.org>
+
+=head1 CONTRIBUTORS
+
+=over
+
+=item Rikus Goodell <rikus.goodell@cpanel.net>
+
+=item Brian Carlson <brian.carlson@cpanel.net>
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright (c) 2014, cPanel, Inc.  Distributed under the terms of the Perl
+Artistic license.

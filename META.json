@@ -1,10 +1,10 @@
 {
-   "abstract" : "Provides POSIX filesystem semantics in pure Perl",
+   "abstract" : "Provides POSIX-like filesystem semantics in pure Perl",
    "author" : [
-      "Erin Schoenhals <erin@cpanel.net>"
+      "Xan Tronix <xan@cpan.org>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "ExtUtils::MakeMaker version 6.62, CPAN::Meta::Converter version 2.120921",
+   "generated_by" : "ExtUtils::MakeMaker version 6.94, CPAN::Meta::Converter version 2.140640",
    "license" : [
       "perl_5"
    ],
@@ -22,6 +22,8 @@
    "prereqs" : {
       "build" : {
          "requires" : {
+            "Test::Builder" : "0",
+            "Test::Deep" : "0",
             "Test::Exception" : "0.26",
             "Test::NoWarnings" : "0.081",
             "Test::Simple" : "0.44"
@@ -38,6 +40,11 @@
          }
       }
    },
-   "release_status" : "stable",
-   "version" : "v0.9.12"
+   "release_status" : "testing",
+   "resources" : {
+      "x_type" : "git",
+      "x_url" : "git://github.com/xantronix/Filesys-POSIX.git",
+      "x_web" : "https://github.com/xantronix/Filesys-POSIX"
+   },
+   "version" : "v0.9.15_0001"
 }

@@ -1,4 +1,4 @@
-# Copyright (c) 2012, cPanel, Inc.
+# Copyright (c) 2014, cPanel, Inc.
 # All rights reserved.
 # http://cpanel.net/
 #
@@ -18,6 +18,7 @@ use Fcntl;
 use Test::More ( 'tests' => 11 );
 use Test::Exception;
 use Test::NoWarnings;
+use Test::Filesys::POSIX::Error;
 
 my $tmpdir = File::Temp::tempdir( 'CLEANUP' => 1 );
 
@@ -41,35 +42,32 @@ foreach ( sort keys %files ) {
     }
 }
 
-my $fs = Filesys::POSIX->new(
-    Filesys::POSIX::Real->new,
-    'path' => $tmpdir
-);
+my $fs = Filesys::POSIX->new( Filesys::POSIX::Real->new, 'path' => $tmpdir );
 
 foreach ( sort keys %files ) {
     my $inode = $fs->stat($_);
 
     if ( $files{$_} eq 'file' ) {
-        ok( $inode->file,          "Filesys::POSIX::Real sees $_ as a file" );
-        ok( $inode->{'size'} == 0, "Filesys::POSIX::Real sees $_ as a 0 byte file" );
+        ok( $inode->file, "Filesys::POSIX::Real sees $_ as a file" );
+        ok(
+            $inode->{'size'} == 0,
+            "Filesys::POSIX::Real sees $_ as a 0 byte file"
+        );
     }
     elsif ( $files{$_} eq 'dir' ) {
         ok( $inode->dir, "Filesys::POSIX::Real sees $_ as a directory" );
     }
 }
 
-throws_ok {
+throws_errno_ok {
     Filesys::POSIX->new( Filesys::POSIX::Real->new );
 }
-qr/^Invalid argument/, "Filesys::POSIX::Real->init() dies when no path is specified";
+&Errno::EINVAL, "Filesys::POSIX::Real->init() dies when no path is specified";
 
-throws_ok {
-    Filesys::POSIX->new(
-        Filesys::POSIX::Real->new,
-        'path' => '/dev/null'
-    );
+throws_errno_ok {
+    Filesys::POSIX->new( Filesys::POSIX::Real->new, 'path' => '/dev/null' );
 }
-qr/^Not a directory/, "Filesys::POSIX::Real->init() dies when special is not a directory";
+&Errno::ENOTDIR, "Filesys::POSIX::Real->init() dies when special is not a directory";
 
 lives_ok {
     $fs->rename( 'foo', 'bleh' );

@@ -1,20 +1,24 @@
-# Copyright (c) 2012, cPanel, Inc.
+# Copyright (c) 2014, cPanel, Inc.
 # All rights reserved.
 # http://cpanel.net/
 #
 # This is free software; you can redistribute it and/or modify it under the same
 # terms as Perl itself.  See the LICENSE file for further details.
 
-package Filesys::POSIX;
+package Filesys::POSIX::IO;
 
 use strict;
 use warnings;
 
 use Filesys::POSIX::Bits;
+use Filesys::POSIX::Module  ();
 use Filesys::POSIX::FdTable ();
 use Filesys::POSIX::Path    ();
+use Filesys::POSIX::Error qw(throw);
 
-use Carp qw/confess/;
+my @MODULES = qw(open read write print printf tell seek close fdopen);
+
+Filesys::POSIX::Module->export_methods( __PACKAGE__, @MODULES );
 
 =head1 NAME
 
@@ -87,6 +91,21 @@ issued file descriptor.
 
 =back
 
+The following exceptions may be thrown.
+
+=over
+
+=item * EINVAL (Invalid argument)
+
+No flags were specified in I<$flags>.
+
+=item * EEXIST (File exists)
+
+When the C<$O_CREAT> flag is passed, this error may occur if a file located at
+I<$path> already exists.
+
+=back
+
 =cut
 
 sub open {
@@ -95,17 +114,20 @@ sub open {
     my $name = $hier->basename;
     my $inode;
 
-    confess('Invalid argument') unless defined $flags;
+    throw &Errno::EINVAL unless defined $flags;
 
     if ( $flags & $O_CREAT ) {
         my $parent    = $self->stat( $hier->dirname );
         my $directory = $parent->directory;
 
         if ( $inode = $directory->get($name) ) {
-            confess('File exists') if $flags & $O_EXCL;
+            throw &Errno::EEXIST if $flags & $O_EXCL;
         }
         else {
-            my $format = $mode ? ( $mode & $S_IFMT ? $mode & $S_IFMT : $S_IFREG ) : $S_IFREG;
+            my $format =
+              $mode
+              ? ( $mode & $S_IFMT ? $mode & $S_IFMT : $S_IFREG )
+              : $S_IFREG;
             my $perms = $mode ? $mode & ( $S_IPERM | $S_IPROT ) : $S_IRW;
 
             $perms &= ~$self->{'umask'};
@@ -133,7 +155,7 @@ Exceptions are thrown for the following:
 
 =over
 
-=item Invalid argument
+=item * EINVAL (Invalid argument)
 
 A read was attempted on a write-only file descriptor.
 
@@ -146,7 +168,7 @@ sub read {
     my $fd    = shift;
     my $entry = $self->{'fds'}->lookup($fd);
 
-    confess('Invalid argument') if $entry->{'flags'} & $O_WRONLY;
+    throw &Errno::EBADF if $entry->{'flags'} & $O_WRONLY;
 
     return $entry->{'handle'}->read(@_);
 }
@@ -164,7 +186,7 @@ The following exceptions may be thrown:
 
 =over
 
-=item Invalid argument
+=item * EINVAL (Invalid argument)
 
 A write was attempted on a read-only file descriptor.
 
@@ -176,7 +198,7 @@ sub write {
     my ( $self, $fd, $buf, $len ) = @_;
     my $entry = $self->{'fds'}->lookup($fd);
 
-    confess('Invalid argument') unless $entry->{'flags'} & ( $O_WRONLY | $O_RDWR );
+    throw &Errno::EINVAL unless $entry->{'flags'} & ( $O_WRONLY | $O_RDWR );
 
     return $entry->{'handle'}->write( $buf, $len );
 }
@@ -191,7 +213,7 @@ Exceptions may be thrown for the following:
 
 =over
 
-=item Invalid argument
+=item * EINVAL (Invalid argument)
 
 Issued when called on a read-only file descriptor.
 
@@ -203,7 +225,7 @@ sub print {
     my ( $self, $fd, @args ) = @_;
     my $entry = $self->{'fds'}->lookup($fd);
 
-    confess('Invalid argument') unless $entry->{'flags'} & ( $O_WRONLY | $O_RDWR );
+    throw &Errno::EINVAL unless $entry->{'flags'} & ( $O_WRONLY | $O_RDWR );
 
     my $buf = join( $/, @args );
 
@@ -219,7 +241,7 @@ Exceptions are thrown for:
 
 =over
 
-=item Invalid argument
+=item * EINVAL (Invalid argument)
 
 Issued when called on a read-only file descriptor.
 
@@ -231,7 +253,7 @@ sub printf {
     my ( $self, $fd, $format, @args ) = @_;
     my $entry = $self->{'fds'}->lookup($fd);
 
-    confess('Invalid argument') unless $entry->{'flags'} & ( $O_WRONLY | $O_RDWR );
+    throw &Errno::EINVAL unless $entry->{'flags'} & ( $O_WRONLY | $O_RDWR );
 
     my $buf = sprintf( $format, @args );
 
@@ -317,3 +339,24 @@ sub fdopen {
 =cut
 
 1;
+
+__END__
+
+=head1 AUTHOR
+
+Written by Xan Tronix <xan@cpan.org>
+
+=head1 CONTRIBUTORS
+
+=over
+
+=item Rikus Goodell <rikus.goodell@cpanel.net>
+
+=item Brian Carlson <brian.carlson@cpanel.net>
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright (c) 2014, cPanel, Inc.  Distributed under the terms of the Perl
+Artistic license.

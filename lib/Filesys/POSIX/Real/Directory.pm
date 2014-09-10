@@ -1,4 +1,4 @@
-# Copyright (c) 2012, cPanel, Inc.
+# Copyright (c) 2014, cPanel, Inc.
 # All rights reserved.
 # http://cpanel.net/
 #
@@ -13,10 +13,9 @@ use warnings;
 use Filesys::POSIX::Bits;
 use Filesys::POSIX::Directory ();
 
-use Errno qw/ENOENT/;
-use Carp ();
+use Errno qw(ENOENT);
 
-our @ISA = qw/Filesys::POSIX::Directory/;
+our @ISA = qw(Filesys::POSIX::Directory);
 
 sub new {
     my ( $class, $path, $inode ) = @_;
@@ -36,7 +35,7 @@ sub new {
 
 sub _sync_all {
     my ($self) = @_;
-    my $mtime = ( lstat $self->{'path'} )[9] or Carp::confess($!);
+    my $mtime = ( lstat $self->{'path'} )[9] or Carp::confess("$!");
 
     return unless $mtime > $self->{'mtime'};
 
@@ -88,6 +87,16 @@ sub set {
     my ( $self, $name, $inode ) = @_;
     $self->{'overlays'}->{$name} = $inode;
     return $inode;
+}
+
+sub rename_member {
+    my ( $self, undef, $olddir, $oldname, $newname ) = @_;
+    return rename( $olddir->path . '/' . $oldname, $self->path . '/' . $newname )
+      && do {
+        $olddir->_sync_member($oldname);
+        $self->_sync_member($newname);
+        1;
+      };
 }
 
 sub exists {
@@ -146,10 +155,7 @@ sub list {
     my ( $self, $name ) = @_;
     $self->_sync_all;
 
-    my %union = (
-        %{ $self->{'members'} },
-        %{ $self->{'overlays'} }
-    );
+    my %union = ( %{ $self->{'members'} }, %{ $self->{'overlays'} } );
 
     return keys %union;
 }
@@ -161,11 +167,12 @@ sub count {
 sub open {
     my ($self) = @_;
 
-    @{ $self->{'skipped'} }{ keys %{ $self->{'overlays'} } } = values %{ $self->{'overlays'} };
+    @{ $self->{'skipped'} }{ keys %{ $self->{'overlays'} } } =
+      values %{ $self->{'overlays'} };
 
     $self->close;
 
-    opendir( $self->{'dh'}, $self->{'path'} ) or Carp::confess($!);
+    opendir( $self->{'dh'}, $self->{'path'} ) or Carp::confess("$!");
 
     return $self;
 }
@@ -173,7 +180,8 @@ sub open {
 sub rewind {
     my ($self) = @_;
 
-    @{ $self->{'skipped'} }{ keys %{ $self->{'overlays'} } } = values %{ $self->{'overlays'} };
+    @{ $self->{'skipped'} }{ keys %{ $self->{'overlays'} } } =
+      values %{ $self->{'overlays'} };
 
     if ( $self->{'dh'} ) {
         rewinddir $self->{'dh'};
@@ -213,6 +221,11 @@ sub close {
     }
 
     return;
+}
+
+sub path {
+    my ($self) = @_;
+    return $self->{'path'};
 }
 
 1;

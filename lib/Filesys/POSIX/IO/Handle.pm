@@ -1,4 +1,4 @@
-# Copyright (c) 2012, cPanel, Inc.
+# Copyright (c) 2014, cPanel, Inc.
 # All rights reserved.
 # http://cpanel.net/
 #
@@ -105,7 +105,10 @@ modifier as specified in L<Filesys::POSIX::Bits>.
 sub seek {
     my ( $self, $pos, $whence ) = @_;
 
-    return sysseek( $$self, $pos, Filesys::POSIX::Bits::System::convertWhenceToSystem($whence) );
+    return sysseek(
+        $$self, $pos,
+        Filesys::POSIX::Bits::System::convertWhenceToSystem($whence)
+    );
 }
 
 =item C<$handle-E<gt>tell>
@@ -148,3 +151,24 @@ regular file data for L<Filesys::POSIX::Mem> filesystem hierarchies.
 =cut
 
 1;
+
+__END__
+
+=head1 AUTHOR
+
+Written by Xan Tronix <xan@cpan.org>
+
+=head1 CONTRIBUTORS
+
+=over
+
+=item Rikus Goodell <rikus.goodell@cpanel.net>
+
+=item Brian Carlson <brian.carlson@cpanel.net>
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright (c) 2014, cPanel, Inc.  Distributed under the terms of the Perl
+Artistic license.

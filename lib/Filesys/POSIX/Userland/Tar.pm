@@ -11,11 +11,17 @@ use strict;
 use warnings;
 
 use Filesys::POSIX::Bits;
+use Filesys::POSIX::Module ();
 
 use Filesys::POSIX::Path                  ();
+use Filesys::POSIX::Userland::Find        ();
 use Filesys::POSIX::Userland::Tar::Header ();
 
 use Carp ();
+
+my @METHODS = qw(tar);
+
+Filesys::POSIX::Module->export_methods( __PACKAGE__, @METHODS );
 
 =head1 NAME
 
@@ -26,12 +32,11 @@ Filesys::POSIX::Userland::Tar - Generate ustar archives from L<Filesys::POSIX>
     use Filesys::POSIX;
     use Filesys::POSIX::Mem;
     use Filesys::POSIX::IO::Handle;
+    use Filesys::POSIX::Userland::Tar;
 
     my $fs = Filesys::POSIX->new(Filesys::POSIX::Mem->new,
         'noatime' => 1
     );
-
-    $fs->import_module('Filesys::POSIX::Userland::Tar');
 
     $fs->mkdir('foo');
     $fs->touch('foo/bar');
@@ -57,10 +62,6 @@ archival.
 =over
 
 =cut
-
-sub EXPORT {
-    qw/tar/;
-}
 
 our $BLOCK_SIZE = 512;
 our $BUF_MAX    = 4096;
@@ -114,8 +115,7 @@ sub _write_file {
                     $premature_eof = 1;
                     warn sprintf(
                         'WARNING: Short read while archiving file (expected total of %d bytes, but only got %d); padding with null bytes...',
-                        $size,
-                        $actual_file_len + $real_len,
+                        $size, $actual_file_len + $real_len,
                     );
                 }
             } while ( $real_len < $max_read && $amt_read > 0 );
@@ -152,22 +152,30 @@ sub _archive {
 
     $blocks .= $header->encode;
 
+    local $@;
+
     eval {
         # Acquire the file handle before writing the header so we don't corrupt
         # the tarball if the file is missing.
-        my $fh  = $inode->open( $O_RDONLY | $O_NONBLOCK );    # Case 82969: No block on pipes
         my $len = length $blocks;
 
         unless ( $handle->write( $blocks, $len ) == $len ) {
             Carp::confess('Short write while dumping tar header to file handle');
         }
-        _write_file( $fh, $inode, $handle, $header->{'size'} ) if $inode->file;
+
+        if ( $inode->file && $header->{'size'} > 0 ) {
+            my $fh = $inode->open( $O_RDONLY | $O_NONBLOCK );    # Case 82969: No block on pipes
+
+            _write_file( $fh, $inode, $handle, $header->{'size'} );
+        }
     };
+
     if ($@) {
         if ( !$opts->{'ignore_missing'} || $@ !~ /No such file or directory/ ) {
             die $@;
         }
-        $opts->{'ignore_missing'}->($path) if ref $opts->{'ignore_missing'} eq 'CODE';
+        $opts->{'ignore_missing'}->($path)
+          if ref $opts->{'ignore_missing'} eq 'CODE';
     }
 }
 
@@ -210,11 +218,11 @@ sub tar {
     my $opts   = ref $_[0] eq 'HASH' ? shift : {};
     my @items  = @_;
 
-    $self->import_module('Filesys::POSIX::Userland::Find');
-
     $self->find(
         sub {
             my ( $path, $inode ) = @_;
+
+            return if $inode->sock;
 
             _archive( $inode, $handle, $path->full, $opts );
         },
@@ -228,3 +236,24 @@ sub tar {
 =cut
 
 1;
+
+__END__
+
+=head1 AUTHOR
+
+Written by Xan Tronix <xan@cpan.org>
+
+=head1 CONTRIBUTORS
+
+=over
+
+=item Rikus Goodell <rikus.goodell@cpanel.net>
+
+=item Brian Carlson <brian.carlson@cpanel.net>
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright (c) 2014, cPanel, Inc.  Distributed under the terms of the Perl
+Artistic license.

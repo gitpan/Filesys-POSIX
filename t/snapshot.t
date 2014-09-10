@@ -1,4 +1,4 @@
-# Copyright (c) 2012, cPanel, Inc.
+# Copyright (c) 2014, cPanel, Inc.
 # All rights reserved.
 # http://cpanel.net/
 #
@@ -14,8 +14,9 @@ use Filesys::POSIX           ();
 use Filesys::POSIX::Mem      ();
 use Filesys::POSIX::Snapshot ();
 
-use Test::More ('tests' => 10);
+use Test::More ( 'tests' => 10 );
 use Test::Exception;
+use Test::Filesys::POSIX::Error;
 
 sub mkskelfs {
     my $fs = Filesys::POSIX->new( Filesys::POSIX::Mem->new );
@@ -73,32 +74,32 @@ sub mkskelfs {
 {
     my $fs = mkskelfs();
 
-    throws_ok {
+    throws_errno_ok {
         $fs->mkpath('/snapshots/1');
 
         $fs->mount( Filesys::POSIX::Snapshot->new, '/snapshots/1' );
     }
-    qr/^Invalid argument/, "Filesys::POSIX::Snapshot->new() emits 'Invalid argument' when no 'path' is specified";
+    &Errno::EINVAL, "Filesys::POSIX::Snapshot->new() emits 'Invalid argument' when no 'path' is specified";
 
     lives_ok {
         $fs->mkpath('/snapshots/2');
 
         $fs->mount(
-            Filesys::POSIX::Snapshot->new, '/snapshots/2',
-            'path' => '/'
+            Filesys::POSIX::Snapshot->new,
+            '/snapshots/2', 'path' => '/'
         );
     }
     "Filesys::POSIX::Snapshot->new() succeeds when 'path' is specified";
 
-    throws_ok {
+    throws_errno_ok {
         $fs->mkpath('/snapshots/3');
 
         $fs->mount(
-            Filesys::POSIX::Snapshot->new, '/snapshots/3',
-            'path' => '/dev/null'
+            Filesys::POSIX::Snapshot->new,
+            '/snapshots/3', 'path' => '/dev/null'
         );
     }
-    qr/^Not a directory/, "Filesys::POSIX::Snapshot->new() emits 'Not a directory' when non-directory 'path' specified";
+    &Errno::ENOTDIR, "Filesys::POSIX::Snapshot->new() emits 'Not a directory' when non-directory 'path' specified";
 }
 
 {
@@ -115,8 +116,15 @@ sub mkskelfs {
     }
     "Filesys::POSIX::Snapshot::Inode->new() lives when FS mounted with 'immediate_dir_copy'";
 
-    isa_ok( $fs->stat('/snapshots/1/dev')->{'directory'}, "Filesys::POSIX::Mem::Directory", '/snapshots/1/dev' );
-    is( $fs->lstat('/snapshots/1/bin/ksh')->readlink, 'sh', "Symlinks are copied by Filesys::POSIX::Snapshot" );
+    isa_ok(
+        $fs->stat('/snapshots/1/dev')->{'directory'},
+        "Filesys::POSIX::Mem::Directory",
+        '/snapshots/1/dev'
+    );
+    is(
+        $fs->lstat('/snapshots/1/bin/ksh')->readlink,
+        'sh', "Symlinks are copied by Filesys::POSIX::Snapshot"
+    );
 
     #
     # Prepare for testing copy-on-write functionality in extent.
@@ -127,10 +135,7 @@ sub mkskelfs {
     $fs->mkdir('/dir');
 
     $fs->mkpath('/snapshots/2');
-    $fs->mount(
-        Filesys::POSIX::Snapshot->new, '/snapshots/2',
-        'path' => '/'
-    );
+    $fs->mount( Filesys::POSIX::Snapshot->new, '/snapshots/2', 'path' => '/' );
 
     note('Mounted snapshot of / in /snapshots/2');
 
@@ -160,10 +165,10 @@ sub mkskelfs {
     #
     my $inode = $fs->stat('/snapshots/2/file');
 
-    throws_ok {
+    throws_errno_ok {
         $inode->directory;
     }
-    qr/^Not a directory/, 'Filesys::POSIX::Snapshot::Inode->directory() throws "Not a directory" as appropriate';
+    &Errno::ENOTDIR, 'Filesys::POSIX::Snapshot::Inode->directory() throws "Not a directory" as appropriate';
 
     #
     # Exercise code that avoids performing copy-on-write when performing readonly
@@ -171,7 +176,10 @@ sub mkskelfs {
     #
     $fd = $fs->open( '/snapshots/2/etc/hosts', $O_RDONLY );
 
-    ok( !defined $fs->fstat($fd)->{'bucket'}, 'Filesys::POSIX::Snapshot::Inode->open() avoids copy-on-write in RO mode' );
+    ok(
+        !defined $fs->fstat($fd)->{'bucket'},
+        'Filesys::POSIX::Snapshot::Inode->open() avoids copy-on-write in RO mode'
+    );
 
     $fs->close($fd);
 }

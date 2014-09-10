@@ -1,4 +1,4 @@
-# Copyright (c) 2012, cPanel, Inc.
+# Copyright (c) 2014, cPanel, Inc.
 # All rights reserved.
 # http://cpanel.net/
 #
@@ -8,18 +8,14 @@
 use strict;
 use warnings;
 
-use Filesys::POSIX;
-use Filesys::POSIX::Mem;
+use Filesys::POSIX                 ();
+use Filesys::POSIX::Mem            ();
+use Filesys::POSIX::Userland::Test ();
 use Filesys::POSIX::Bits;
 
 use Test::More ( 'tests' => 80 );
 
-my $fs = Filesys::POSIX->new(
-    Filesys::POSIX::Mem->new,
-    'noatime' => 1
-);
-
-$fs->import_module('Filesys::POSIX::Userland::Test');
+my $fs = Filesys::POSIX->new( Filesys::POSIX::Mem->new, 'noatime' => 1 );
 
 sub controlled_test {
     my ( $expected, $tests, $controls, @exclude ) = @_;
@@ -39,7 +35,10 @@ sub controlled_test {
             my $result = $test->{'test'}->($file);
             my $condition = $expected ? 'true' : 'false';
 
-            ok( $expected == $result, "\$fs->$test_name() returns $condition when given a $type inode ($file)" );
+            ok(
+                $expected == $result,
+                "\$fs->$test_name() returns $condition when given a $type inode ($file)"
+            );
         }
     }
 }
@@ -154,11 +153,7 @@ my %PERM_TESTS = (
     }
 );
 
-my %ALL_TESTS = (
-    %EXISTENCE_TESTS,
-    %FORMAT_TESTS,
-    %PERM_TESTS
-);
+my %ALL_TESTS = ( %EXISTENCE_TESTS, %FORMAT_TESTS, %PERM_TESTS );
 
 $fs->mkdir('/bin');
 $fs->mkdir('/dev');
@@ -176,7 +171,10 @@ foreach my $name ( sort keys %ALL_TESTS ) {
 
     my $result = $test->{'test'}->($file);
 
-    ok( $result, "\$fs->$name() returns true when passed a $type inode ($file)" );
+    ok(
+        $result,
+        "\$fs->$name() returns true when passed a $type inode ($file)"
+    );
 }
 
 #

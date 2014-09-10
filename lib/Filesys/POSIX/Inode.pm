@@ -1,4 +1,4 @@
-# Copyright (c) 2012, cPanel, Inc.
+# Copyright (c) 2014, cPanel, Inc.
 # All rights reserved.
 # http://cpanel.net/
 #
@@ -11,7 +11,7 @@ use strict;
 use warnings;
 
 use Filesys::POSIX::Bits;
-use Carp ();
+use Filesys::POSIX::Error qw(throw);
 
 =head1 NAME
 
@@ -85,16 +85,27 @@ sub fifo {
     ( shift->{'mode'} & $S_IFMT ) == $S_IFIFO;
 }
 
+=item C<$inode-E<gt>sock>
+
+Returns true if the current inode refers to a socket.
+
+=cut
+
+sub sock {
+    ( shift->{'mode'} & $S_IFMT ) == $S_IFSOCK;
+}
+
 =item C<$inode-E<gt>major>
 
 If the current inode is a block or character device, return the major number.
+Otherwise, an EINVAL is thrown.
 
 =cut
 
 sub major {
     my ($self) = @_;
 
-    Carp::confess('Invalid argument') unless $self->char || $self->block;
+    throw &Errno::EINVAL unless $self->char || $self->block;
 
     return ( $self->{'rdev'} & 0xffff0000 ) >> 16;
 }
@@ -102,13 +113,14 @@ sub major {
 =item C<$inode-E<gt>minor>
 
 If the current inode is a block or character device, return the minor number.
+Otherwise, an EINVAL is thrown.
 
 =cut
 
 sub minor {
     my ($self) = @_;
 
-    Carp::confess('Invalid argument') unless $self->char || $self->block;
+    throw &Errno::EINVAL unless $self->char || $self->block;
 
     return $self->{'rdev'} & 0x0000ffff;
 }
@@ -183,7 +195,8 @@ L<stat()|perlfunc/stat>.
 sub update {
     my ( $self, @st ) = @_;
 
-    @{$self}{qw/size atime mtime ctime uid gid mode rdev/} = ( @st[ 7 .. 10 ], @st[ 4 .. 5 ], $st[2], $st[6] );
+    @{$self}{qw/size atime mtime ctime uid gid mode rdev/} =
+      ( @st[ 7 .. 10 ], @st[ 4 .. 5 ], $st[2], $st[6] );
 
     return $self;
 }
@@ -191,20 +204,14 @@ sub update {
 =item C<$inode-E<gt>directory>
 
 If the current inode is a directory, return the directory object held by it.
-Otherwise, the following exception is issued:
-
-=over
-
-=item Not a directory
-
-=back
+Otherwise, an ENOTDIR is thrown.
 
 =cut
 
 sub directory {
     my ($self) = @_;
 
-    Carp::confess('Not a directory') unless $self->dir;
+    throw &Errno::ENOTDIR unless $self->dir;
 
     return $self->{'directory'};
 }
@@ -227,3 +234,24 @@ sub empty {
 =cut
 
 1;
+
+__END__
+
+=head1 AUTHOR
+
+Written by Xan Tronix <xan@cpan.org>
+
+=head1 CONTRIBUTORS
+
+=over
+
+=item Rikus Goodell <rikus.goodell@cpanel.net>
+
+=item Brian Carlson <brian.carlson@cpanel.net>
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright (c) 2014, cPanel, Inc.  Distributed under the terms of the Perl
+Artistic license.

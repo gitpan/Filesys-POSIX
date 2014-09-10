@@ -1,4 +1,4 @@
-# Copyright (c) 2012, cPanel, Inc.
+# Copyright (c) 2014, cPanel, Inc.
 # All rights reserved.
 # http://cpanel.net/
 #
@@ -175,8 +175,42 @@ sub close {
     confess('Not implemented');
 }
 
+=item C<$directory-E<gt>rename_member()>
+
+Rename an item from one Filesys::POSIX::Directory so that it becomes
+a member of another Filesys::POSIX::Directory and/or changes name.
+
+=cut
+
+sub rename_member {
+    my ( $self, $inode, $old_dir, $old_name, $new_name ) = @_;
+    $old_dir->detach($old_name);
+    $self->set( $new_name, $inode );
+}
+
 =back
 
 =cut
 
 1;
+
+__END__
+
+=head1 AUTHOR
+
+Written by Xan Tronix <xan@cpan.org>
+
+=head1 CONTRIBUTORS
+
+=over
+
+=item Rikus Goodell <rikus.goodell@cpanel.net>
+
+=item Brian Carlson <brian.carlson@cpanel.net>
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright (c) 2014, cPanel, Inc.  Distributed under the terms of the Perl
+Artistic license.

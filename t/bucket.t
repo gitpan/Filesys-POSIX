@@ -1,4 +1,4 @@
-# Copyright (c) 2012, cPanel, Inc.
+# Copyright (c) 2014, cPanel, Inc.
 # All rights reserved.
 # http://cpanel.net/
 #
@@ -15,6 +15,7 @@ use Filesys::POSIX::Bits;
 
 use Test::More ( 'tests' => 56 );
 use Test::Exception;
+use Test::Filesys::POSIX::Error;
 use Test::NoWarnings;
 
 {
@@ -31,43 +32,85 @@ use Test::NoWarnings;
 
     $bucket->open($O_RDWR);
 
-    is( $bucket->write( 'foo', 3 ), 3, "Filesys::POSIX::Mem::Bucket->write() returns expected write length" );
+    is(
+        $bucket->write( 'foo', 3 ),
+        3,
+        "Filesys::POSIX::Mem::Bucket->write() returns expected write length"
+    );
 
-    throws_ok {
+    throws_errno_ok {
         $bucket->_flush_to_disk(3);
     }
-    qr/^Already flushed to disk/, "Filesys::POSIX::Mem::Bucket->_flush_to_disk() cannot be repeated";
+    &Errno::EALREADY, "Filesys::POSIX::Mem::Bucket->_flush_to_disk() cannot be repeated";
 
     my ( $file, $handle ) = @{$bucket}{qw/file fh/};
 
-    ok( -f $file, "Filesys::POSIX::Mem::Bucket->write() flushes to disk immediately with a max of 0" );
-    ok( $bucket->seek( 0, $SEEK_SET ) == 0, "Filesys::POSIX::Mem::Bucket->seek() functions and returns expected offset" );
-    is( $bucket->read( my $buf, 3 ), 3, "Filesys::POSIX::Mem::Bucket->read() reports expected read length" );
-    is( $buf,          'foo', "Filesys::POSIX::Mem::Bucket->read() populated buffer with expected contents" );
-    is( $bucket->tell, 3,     "Filesys::POSIX::Mem::Bucket->tell() reports expected offset" );
-    is( $bucket->seek( 0, $SEEK_CUR ), 3, "Filesys::POSIX::Mem::Bucket->seek(0, \$SEEK_CUR) operates expectedly" );
-    is( $bucket->seek( 3, $SEEK_CUR ), 6, "Filesys::POSIX::Mem::Bucket->seek(3, \$SEEK_CUR) operates expectedly" );
+    ok(
+        -f $file,
+        "Filesys::POSIX::Mem::Bucket->write() flushes to disk immediately with a max of 0"
+    );
+    ok(
+        $bucket->seek( 0, $SEEK_SET ) == 0,
+        "Filesys::POSIX::Mem::Bucket->seek() functions and returns expected offset"
+    );
+    is(
+        $bucket->read( my $buf, 3 ),
+        3, "Filesys::POSIX::Mem::Bucket->read() reports expected read length"
+    );
+    is(
+        $buf, 'foo',
+        "Filesys::POSIX::Mem::Bucket->read() populated buffer with expected contents"
+    );
+    is(
+        $bucket->tell, 3,
+        "Filesys::POSIX::Mem::Bucket->tell() reports expected offset"
+    );
+    is(
+        $bucket->seek( 0, $SEEK_CUR ),
+        3,
+        "Filesys::POSIX::Mem::Bucket->seek(0, \$SEEK_CUR) operates expectedly"
+    );
+    is(
+        $bucket->seek( 3, $SEEK_CUR ),
+        6,
+        "Filesys::POSIX::Mem::Bucket->seek(3, \$SEEK_CUR) operates expectedly"
+    );
 
-    throws_ok {
+    throws_errno_ok {
         $bucket->open(0);
     }
-    qr/^Already opened/, "Filesys::POSIX::Mem::Bucket->open() will throw 'Already opened' when appropriate";
+    &Errno::EBUSY, "Filesys::POSIX::Mem::Bucket->open() will throw 'Already opened' when appropriate";
 
     $bucket->close;
 
-    ok( !defined fileno($handle), "Filesys::POSIX::Mem::Bucket->close() closes internal file handle" );
-    ok( !defined $bucket->{'fh'}, "Filesys::POSIX::Mem::Bucket->close() destroys internal file handle" );
+    ok(
+        !defined fileno($handle),
+        "Filesys::POSIX::Mem::Bucket->close() closes internal file handle"
+    );
+    ok(
+        !defined $bucket->{'fh'},
+        "Filesys::POSIX::Mem::Bucket->close() destroys internal file handle"
+    );
 
     $bucket->open($O_APPEND);
-    ok( $bucket->{'pos'} == $bucket->{'size'}, "Filesys::POSIX::Mem::Bucket->open() honors \$O_APPEND" );
+    ok(
+        $bucket->{'pos'} == $bucket->{'size'},
+        "Filesys::POSIX::Mem::Bucket->open() honors \$O_APPEND"
+    );
 
     $bucket->close;
     $bucket->open($O_TRUNC);
-    ok( $bucket->{'pos'} == 0 && $bucket->{'size'} == 0, "Filesys::POSIX::Mem::Bucket->open() honors \$O_TRUNC" );
+    ok(
+        $bucket->{'pos'} == 0 && $bucket->{'size'} == 0,
+        "Filesys::POSIX::Mem::Bucket->open() honors \$O_TRUNC"
+    );
 
     undef $bucket;
 
-    ok( !-f $file, "Filesys::POSIX::Mem::Bucket->DESTROY() reclaims disk file" );
+    ok(
+        !-f $file,
+        "Filesys::POSIX::Mem::Bucket->DESTROY() reclaims disk file"
+    );
 }
 
 {
@@ -87,7 +130,10 @@ use Test::NoWarnings;
     my ( $file, $handle ) = @{$bucket}{qw/file fh/};
     undef $bucket;
 
-    ok( !-f $file && !defined fileno($handle), "Filesys::POSIX::Mem::Bucket->DESTROY() calls close()" );
+    ok(
+        !-f $file && !defined fileno($handle),
+        "Filesys::POSIX::Mem::Bucket->DESTROY() calls close()"
+    );
 }
 
 {
@@ -109,7 +155,10 @@ use Test::NoWarnings;
     undef $bucket->{'file'};
     $bucket->close;
 
-    ok( -f $file && !defined fileno($handle), "Filesys::POSIX::Mem::Bucket->close() only removes file it references" );
+    ok(
+        -f $file && !defined fileno($handle),
+        "Filesys::POSIX::Mem::Bucket->close() only removes file it references"
+    );
 
     unlink($file);
 }
@@ -133,10 +182,10 @@ use Test::NoWarnings;
     $bucket->close;
     unlink($file);
 
-    throws_ok {
+    throws_errno_ok {
         $bucket->open;
     }
-    qr/^Unable to reopen bucket/, "Filesys::POSIX::Mem::Bucket->open() will die when reopening missing bucket";
+    &Errno::ENOENT, "Filesys::POSIX::Mem::Bucket->open() will die when reopening missing bucket";
 }
 
 {
@@ -186,7 +235,11 @@ use Test::NoWarnings;
         $bucket->write( 'meowcats', 8 );
     }
 
-    is( $bucket->{'size'}, 192 * 8, "Filesys::POSIX::Mem::Bucket->_flush_to_disk() flushes when size exceeds max" );
+    is(
+        $bucket->{'size'},
+        192 * 8,
+        "Filesys::POSIX::Mem::Bucket->_flush_to_disk() flushes when size exceeds max"
+    );
 
     {
         my $read = 0;
@@ -197,14 +250,19 @@ use Test::NoWarnings;
             $read += $len if $buf eq 'meowcats';
         }
 
-        is( $read, 192 * 8, "Filesys::POSIX::Mem::Bucket->read() fetches bucket data correctly after seek(0, 0)" );
+        is(
+            $read,
+            192 * 8,
+            "Filesys::POSIX::Mem::Bucket->read() fetches bucket data correctly after seek(0, 0)"
+        );
     }
 
     {
         $bucket->seek( 0, $SEEK_SET );
 
         is(
-            $bucket->read( my $buf, 192 * 9 ), 192 * 8,
+            $bucket->read( my $buf, 192 * 9 ),
+            192 * 8,
             "Filesys::POSIX::Mem::Bucket->read() restricts read max to position, minus size"
         );
     }
@@ -229,24 +287,27 @@ use Test::NoWarnings;
     $bucket->seek( 2048, $SEEK_SET );
 
     is(
-        $bucket->read( my $buf, 3 ), 0,
+        $bucket->read( my $buf, 3 ),
+        0,
         "Filesys::POSIX::Mem::Bucket->read() returns 0 when reading beyond size in memory buckets"
     );
 
     is(
-        $bucket->seek( 2048, $SEEK_END ), 2048,
+        $bucket->seek( 2048, $SEEK_END ),
+        2048,
         "Filesys::POSIX::Mem::Bucket->seek() with \$SEEK_END works properly"
     );
 
     is(
-        $bucket->seek( 2048, $SEEK_CUR ), 4096,
+        $bucket->seek( 2048, $SEEK_CUR ),
+        4096,
         "Filesys::POSIX::Mem::Bucket->seek() with \$SEEK_CUR works properly"
     );
 
-    throws_ok {
+    throws_errno_ok {
         $bucket->seek( 2048, 0x04 );
     }
-    qr/^Invalid argument/, "Filesys::POSIX::Mem::Bucket->seek() will die with 'Invalid argument' when appropriate";
+    &Errno::EINVAL, "Filesys::POSIX::Mem::Bucket->seek() will die with 'Invalid argument' when appropriate";
 }
 
 {
@@ -261,8 +322,15 @@ use Test::NoWarnings;
 
     my $len = $bucket->read( my $buf, 128 );
 
-    is( $len, 128,       "Filesys::POSIX::Mem::Bucket->read() after open(\$O_RDWR | \$O_TRUNC) returns correct number of bytes" );
-    is( $buf, 'O' x 128, "Filesys::POSIX::Mem::Bucket->read() after truncate open filled buffer appropriately" );
+    is(
+        $len, 128,
+        "Filesys::POSIX::Mem::Bucket->read() after open(\$O_RDWR | \$O_TRUNC) returns correct number of bytes"
+    );
+    is(
+        $buf,
+        'O' x 128,
+        "Filesys::POSIX::Mem::Bucket->read() after truncate open filled buffer appropriately"
+    );
 }
 
 {
@@ -280,13 +348,25 @@ use Test::NoWarnings;
 
     my $len = $bucket->read( my $buf, 20480 );
 
-    is( $len, 20480, "First write() 20480 bytes written successfully to memory bucket" );
-    ok( $buf eq 'X' x 20480, "Filesys::POSIX::Mem::Bucket->read() after two open() write calls returns expected result" );
+    is(
+        $len, 20480,
+        "First write() 20480 bytes written successfully to memory bucket"
+    );
+    ok(
+        $buf eq 'X' x 20480,
+        "Filesys::POSIX::Mem::Bucket->read() after two open() write calls returns expected result"
+    );
 
     $len = $bucket->read( $buf, 512 );
 
-    is( $len, 4,       "Second write() of 4 bytes written successfully to memory bucket" );
-    is( $buf, "foo\n", "Filesys::POSIX::Mem::Bucket->read() after two open() write calls returns expected second result" );
+    is(
+        $len, 4,
+        "Second write() of 4 bytes written successfully to memory bucket"
+    );
+    is(
+        $buf, "foo\n",
+        "Filesys::POSIX::Mem::Bucket->read() after two open() write calls returns expected second result"
+    );
 
     $bucket->close;
 }
@@ -311,30 +391,60 @@ use Test::NoWarnings;
 
         $bucket->open( $flag | $O_WRONLY );
 
-        is( $bucket->{'size'}, 0, "Bucket size is 0 after second open() with $flag_name" );
-        is( $bucket->{'pos'},  0, "Bucket position is 0 after second open() with $flag_name" );
+        is(
+            $bucket->{'size'}, 0,
+            "Bucket size is 0 after second open() with $flag_name"
+        );
+        is(
+            $bucket->{'pos'}, 0,
+            "Bucket position is 0 after second open() with $flag_name"
+        );
 
         $bucket->write( 'X' x 1024, 1024 );
 
-        is( $bucket->{'size'}, 1024, "Bucket size is 1024 after write() following second open() with $flag_name" );
-        is( $bucket->{'pos'},  1024, "Bucket position is 1024 after second write() following second open() with $flag_name" );
+        is(
+            $bucket->{'size'}, 1024,
+            "Bucket size is 1024 after write() following second open() with $flag_name"
+        );
+        is(
+            $bucket->{'pos'}, 1024,
+            "Bucket position is 1024 after second write() following second open() with $flag_name"
+        );
 
         $bucket->close;
 
         $bucket->open($O_RDONLY);
 
-        is( $bucket->{'size'}, 1024, "Bucket size is still 1024 after third open() with \$O_RDONLY" );
-        is( $bucket->{'pos'},  0,    "Bucket position is 0 after third open() with \$O_RDONLY" );
+        is(
+            $bucket->{'size'}, 1024,
+            "Bucket size is still 1024 after third open() with \$O_RDONLY"
+        );
+        is(
+            $bucket->{'pos'}, 0,
+            "Bucket position is 0 after third open() with \$O_RDONLY"
+        );
 
         my $len = $bucket->read( my $buf, 1024 );
 
-        is( $len, 1024, "read() 1024 bytes after third open() with \$O_RDONLY" );
-        ok( $buf eq 'X' x 1024, "read() expected data after third open() with \$O_RDONLY" );
+        is(
+            $len, 1024,
+            "read() 1024 bytes after third open() with \$O_RDONLY"
+        );
+        ok(
+            $buf eq 'X' x 1024,
+            "read() expected data after third open() with \$O_RDONLY"
+        );
 
         $len = $bucket->read( $buf, 1024 );
 
-        is( $len, 0, "read() 0 further bytes after third open() with \$O_RDONLY" );
-        ok( $buf eq '', "read() expected nothingness after third open() with \$O_RDONLY" );
+        is(
+            $len, 0,
+            "read() 0 further bytes after third open() with \$O_RDONLY"
+        );
+        ok(
+            $buf eq '',
+            "read() expected nothingness after third open() with \$O_RDONLY"
+        );
 
         $bucket->close;
     }

@@ -1,19 +1,26 @@
-# Copyright (c) 2012, cPanel, Inc.
+# Copyright (c) 2014, cPanel, Inc.
 # All rights reserved.
 # http://cpanel.net/
 #
 # This is free software; you can redistribute it and/or modify it under the same
 # terms as Perl itself.  See the LICENSE file for further details.
 
-package Filesys::POSIX;
+package Filesys::POSIX::Userland;
 
 use strict;
 use warnings;
 
 use Filesys::POSIX::Bits;
-use Filesys::POSIX::Path ();
+use Filesys::POSIX::Module ();
+use Filesys::POSIX::Path   ();
 
 use Carp qw/confess/;
+
+my @METHODS = qw(
+  _find_inode_path mkpath getcwd realpath opendir readdir closedir touch
+);
+
+Filesys::POSIX::Module->export_methods( __PACKAGE__, @METHODS );
 
 =head1 NAME
 
@@ -42,7 +49,8 @@ sub _find_inode_path {
 
         foreach my $item ( $directory->list ) {
             next if $item eq '.' || $item eq '..';
-            next unless $self->{'vfs'}->vnode( $directory->get($item) ) == $self->{'vfs'}->vnode($inode);
+            next
+              unless $self->{'vfs'}->vnode( $directory->get($item) ) == $self->{'vfs'}->vnode($inode);
 
             push @ret, $item;
             $inode = $dir;
@@ -200,3 +208,24 @@ sub touch {
 =cut
 
 1;
+
+__END__
+
+=head1 AUTHOR
+
+Written by Xan Tronix <xan@cpan.org>
+
+=head1 CONTRIBUTORS
+
+=over
+
+=item Rikus Goodell <rikus.goodell@cpanel.net>
+
+=item Brian Carlson <brian.carlson@cpanel.net>
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright (c) 2014, cPanel, Inc.  Distributed under the terms of the Perl
+Artistic license.

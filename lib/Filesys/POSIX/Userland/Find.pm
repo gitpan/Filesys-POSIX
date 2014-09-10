@@ -1,4 +1,4 @@
-# Copyright (c) 2012, cPanel, Inc.
+# Copyright (c) 2014, cPanel, Inc.
 # All rights reserved.
 # http://cpanel.net/
 #
@@ -11,11 +11,12 @@ use strict;
 use warnings;
 
 use Filesys::POSIX::Bits;
-use Filesys::POSIX::Path ();
+use Filesys::POSIX::Module ();
+use Filesys::POSIX::Path   ();
 
-sub EXPORT {
-    qw/find/;
-}
+my @METHODS = qw(find);
+
+Filesys::POSIX::Module->export_methods( __PACKAGE__, @METHODS );
 
 =head1 NAME
 
@@ -25,6 +26,7 @@ Filesys::POSIX::Userland::Find - Crawl directories in a filesystem
 
     use Filesys::POSIX;
     use Filesys::POSIX::Real;
+    use Filesys::POSIX::Userland::Find;
 
     my $fs = Filesys::POSIX->new(Filesys::POSIX::Real->new,
         'special'   => 'real:/home/foo',
@@ -110,3 +112,24 @@ sub find {
 }
 
 1;
+
+__END__
+
+=head1 AUTHOR
+
+Written by Xan Tronix <xan@cpan.org>
+
+=head1 CONTRIBUTORS
+
+=over
+
+=item Rikus Goodell <rikus.goodell@cpanel.net>
+
+=item Brian Carlson <brian.carlson@cpanel.net>
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright (c) 2014, cPanel, Inc.  Distributed under the terms of the Perl
+Artistic license.
