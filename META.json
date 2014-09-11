@@ -26,7 +26,8 @@
             "Test::Deep" : "0",
             "Test::Exception" : "0.26",
             "Test::NoWarnings" : "0.081",
-            "Test::Simple" : "0.44"
+            "Test::Simple" : "0.44",
+            "Try::Tiny" : "0"
          }
       },
       "configure" : {
@@ -46,5 +47,5 @@
       "x_url" : "git://github.com/xantronix/Filesys-POSIX.git",
       "x_web" : "https://github.com/xantronix/Filesys-POSIX"
    },
-   "version" : "v0.9.15_0002"
+   "version" : "v0.9.15_0003"
 }
