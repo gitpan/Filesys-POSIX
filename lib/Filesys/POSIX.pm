@@ -22,14 +22,9 @@ use Filesys::POSIX::Userland ();
 
 use Filesys::POSIX::Error qw(throw);
 
-use Carp qw/confess/;
+use Carp qw(confess);
 
-our $AUTOLOAD;
-
-BEGIN {
-    use Exporter ();
-    our $VERSION = '0.9.15_0005';
-}
+our $VERSION = '0.9.15';
 
 =head1 NAME
 
