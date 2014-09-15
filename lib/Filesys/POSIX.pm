@@ -28,7 +28,7 @@ our $AUTOLOAD;
 
 BEGIN {
     use Exporter ();
-    our $VERSION = '0.9.15_0004';
+    our $VERSION = '0.9.15_0005';
 }
 
 =head1 NAME
@@ -787,6 +787,11 @@ Lists the requirements for writing modules that act as directory structures.
 =item L<Filesys::POSIX::Inode>
 
 Lists the requirements for writing modules that act as inodes.
+
+=item L<Filesys::POSIX::Module>
+
+Provides an interface for loading methods from modules that extend
+Filesys::POSIX.
 
 =back
 

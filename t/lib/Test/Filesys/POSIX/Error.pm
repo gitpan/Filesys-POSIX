@@ -46,13 +46,10 @@ sub throws_errno_ok (&$$) {
     my $builder = $CLASS->builder;
     my $pass    = 1;
 
-    local $@;
-
     try {
         $sub->();
         $pass = 0;
-    }
-    catch {};
+    };
 
     my $found = int $!;
 
