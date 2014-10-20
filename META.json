@@ -41,11 +41,11 @@
          }
       }
    },
-   "release_status" : "stable",
+   "release_status" : "testing",
    "resources" : {
       "x_type" : "git",
       "x_url" : "git://github.com/xantronix/Filesys-POSIX.git",
       "x_web" : "https://github.com/xantronix/Filesys-POSIX"
    },
-   "version" : "v0.9.15"
+   "version" : "v0.9.16_0001"
 }

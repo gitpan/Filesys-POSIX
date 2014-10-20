@@ -28,4 +28,4 @@ resources:
   Type: git
   Url: git://github.com/xantronix/Filesys-POSIX.git
   Web: https://github.com/xantronix/Filesys-POSIX
-version: v0.9.15
+version: v0.9.16_0001
